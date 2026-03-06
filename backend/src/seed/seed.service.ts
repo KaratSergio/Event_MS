@@ -42,14 +42,12 @@ export class SeedService implements OnModuleInit {
 
       const user1 = this.userRepository.create({
         email: 'bob@g.com',
-        passwordHash: hashedPassword,
-        name: 'Bob Dylan',
+        passwordHash: hashedPassword
       });
 
       const user2 = this.userRepository.create({
         email: 'jane@g.com',
-        passwordHash: hashedPassword,
-        name: 'Jane Smith',
+        passwordHash: hashedPassword
       });
 
       await this.userRepository.save([user1, user2]);
