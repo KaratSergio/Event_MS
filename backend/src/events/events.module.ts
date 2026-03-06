@@ -7,9 +7,7 @@ import { User } from '../database/entities/user.entity';
 import { Participant } from '../database/entities/participant.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Event, User, Participant]),
-  ],
+  imports: [TypeOrmModule.forFeature([Event, User, Participant])],
   controllers: [EventsController],
   providers: [EventsService],
   exports: [EventsService],
