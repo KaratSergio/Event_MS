@@ -12,41 +12,38 @@ interface JwtPayload {
 }
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy) {
+export class RefreshStrategy extends PassportStrategy(Strategy, 'refresh') {
   constructor(
     private configService: ConfigService,
-    private authService: AuthService,
+    private authService: AuthService
   ) {
-    const secret = configService.get<string>('JWT_ACCESS_SECRET');
-    if (!secret) throw new Error('JWT_ACCESS_SECRET is not defined');
+    const secret = configService.get<string>('JWT_REFRESH_SECRET');
+    if (!secret) throw new Error('JWT_REFRESH_SECRET is not defined');
 
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         (request: Request) => {
-          return request?.cookies?.accessToken;
+          return request?.cookies?.refreshToken;
         },
-        ExtractJwt.fromAuthHeaderAsBearerToken(),
+        ExtractJwt.fromBodyField('refreshToken'),
       ]),
       ignoreExpiration: false,
       secretOrKey: secret,
+      passReqToCallback: true,
     });
   }
 
-  async validate(payload: JwtPayload) {
-    const user = await this.authService.validateUser(payload.sub)
+  async validate(req: Request, payload: JwtPayload) {
+    const user = await this.authService.validateUser(payload.sub);
 
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
 
     if (payload.tokenVersion !== user.tokenVersion) {
-      throw new UnauthorizedException('Token expired');
+      throw new UnauthorizedException('Refresh token expired');
     }
 
-    return {
-      id: user.id,
-      email: user.email,
-      tokenVersion: user.tokenVersion,
-    };
+    return user;
   }
 }

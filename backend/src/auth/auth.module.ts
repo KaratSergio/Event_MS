@@ -6,7 +6,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
-import { User } from '../database/entities/user.entity';
+import { RefreshStrategy } from './refresh.strategy';
+import { User } from '../database/entities';
 
 @Module({
   imports: [
@@ -16,15 +17,15 @@ import { User } from '../database/entities/user.entity';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get('JWT_SECRET', 'super-secret-key'),
+        secret: configService.get('JWT_ACCESS_SECRET'),
         signOptions: {
-          expiresIn: configService.get('JWT_EXPIRES_IN', '7d'),
+          expiresIn: configService.get('JWT_ACCESS_EXPIRES_IN', '15m'),
         },
       }),
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
-  exports: [JwtStrategy, PassportModule],
+  providers: [AuthService, JwtStrategy, RefreshStrategy],
+  exports: [JwtStrategy, RefreshStrategy, PassportModule],
 })
 export class AuthModule { }
