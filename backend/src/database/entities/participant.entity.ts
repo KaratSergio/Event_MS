@@ -17,7 +17,7 @@ export class Participant {
   @CreateDateColumn({ name: 'joined_at' })
   joinedAt: Date;
 
-  @ManyToOne(() => User, user => user.participation, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, user => user.participations, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: User;
 

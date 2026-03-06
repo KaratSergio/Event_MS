@@ -13,5 +13,18 @@ export class AuthResponseDto {
   user: UserResponseDto;
 
   @ApiProperty()
-  token: string;
+  accessToken: string;
+
+  @ApiProperty()
+  refreshToken: string;
+}
+
+export class TokenResponseDto {
+  @ApiProperty()
+  accessToken: string;
+}
+
+export class LogoutResponseDto {
+  @ApiProperty()
+  message: string;
 }
