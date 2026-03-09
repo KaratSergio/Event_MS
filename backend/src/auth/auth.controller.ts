@@ -5,11 +5,11 @@ import {
 } from '@nestjs/common';
 import {
   ApiTags, ApiOperation,
-  ApiResponse, ApiBearerAuth, ApiCookieAuth
+  ApiResponse, ApiBearerAuth
 } from '@nestjs/swagger';
 import {
-  RegisterDto, LoginDto, LogoutResponseDto,
-  AuthResponseDto, TokenResponseDto, RefreshTokenDto
+  RegisterDto, LoginDto,
+  AuthResponseDto,
 } from './dto';
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
@@ -28,10 +28,10 @@ export class AuthController {
   async register(
     @Body() registerDto: RegisterDto,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<AuthResponseDto> {
+  ) {
     const result = await this.authService.register(registerDto);
     this._setTokenCookies(res, result.accessToken, result.refreshToken);
-    return result;
+    return { user: result.user };
   }
 
   @Post('login')
@@ -42,48 +42,42 @@ export class AuthController {
   async login(
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<AuthResponseDto> {
+  ) {
     const result = await this.authService.login(loginDto);
     this._setTokenCookies(res, result.accessToken, result.refreshToken);
-    return result;
+    return { user: result.user };
   }
 
   @Post('refresh')
   @UseGuards(RefreshGuard)
   @HttpCode(HttpStatus.OK)
-  @ApiCookieAuth()
-  @ApiOperation({ summary: 'Refresh access token' })
-  @ApiResponse({ status: 200, description: 'Token refreshed', type: TokenResponseDto })
   async refreshToken(
     @GetUser() user: User,
-    @Body() refreshTokenDto: RefreshTokenDto,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<TokenResponseDto> {
-    const result = await this.authService.refreshToken(user.id, refreshTokenDto.refreshToken);
-    this._setTokenCookies(res, result.accessToken, refreshTokenDto.refreshToken);
-    return result;
+  ) {
+    const tokens = await this.authService.refreshToken(user.id);
+    this._setTokenCookies(res, tokens.accessToken, tokens.refreshToken);
+    return { message: 'ok' };
   }
 
   @Post('logout')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Logout user' })
-  @ApiResponse({ status: 200, description: 'Logged out successfully', type: LogoutResponseDto })
   async logout(
     @GetUser() user: User,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<LogoutResponseDto> {
+  ) {
+    if (!user) return { message: 'Already logged out' };
     await this.authService.logout(user.id);
     this._clearTokenCookies(res);
+
     return { message: 'Logged out successfully' };
   }
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get current user' })
-  @ApiResponse({ status: 200, description: 'Current user profile' })
   getMe(@GetUser() user: User) {
     return {
       id: user.id,
@@ -91,33 +85,35 @@ export class AuthController {
     };
   }
 
-  private _setTokenCookies(
-    res: Response,
-    accessToken: string,
-    refreshToken: string
-  ): void {
-    res.clearCookie('accessToken', { path: '/' });
-    res.clearCookie('refreshToken', { path: '/auth/refresh' });
+  private readonly cookieOptions = {
+    httpOnly: true,
+    secure: false,
+    sameSite: 'lax' as const,
+  };
 
+  private _setTokenCookies(res: Response, accessToken: string, refreshToken: string): void {
     res.cookie('accessToken', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      ...this.cookieOptions,
       maxAge: 15 * 60 * 1000,
       path: '/',
     });
 
     res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      ...this.cookieOptions,
       maxAge: 7 * 24 * 60 * 60 * 1000,
       path: '/auth/refresh',
     });
   }
 
   private _clearTokenCookies(res: Response): void {
-    res.clearCookie('accessToken', { path: '/' });
-    res.clearCookie('refreshToken', { path: '/auth/refresh' });
+    res.clearCookie('accessToken', {
+      ...this.cookieOptions,
+      path: '/',
+    });
+
+    res.clearCookie('refreshToken', {
+      ...this.cookieOptions,
+      path: '/auth/refresh',
+    });
   }
 }

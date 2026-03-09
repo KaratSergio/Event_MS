@@ -8,20 +8,23 @@ class UserResponseDto {
   email: string;
 }
 
+export class AuthResultDto {
+  user: UserResponseDto;
+  accessToken: string;
+  refreshToken: string;
+}
+
 export class AuthResponseDto {
   @ApiProperty()
   user: UserResponseDto;
-
-  @ApiProperty()
-  accessToken: string;
-
-  @ApiProperty()
-  refreshToken: string;
 }
 
 export class TokenResponseDto {
   @ApiProperty()
   accessToken: string;
+
+  @ApiProperty()
+  refreshToken: string;
 }
 
 export class LogoutResponseDto {
