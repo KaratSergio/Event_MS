@@ -12,7 +12,7 @@ import * as argon2 from 'argon2';
 import { User } from '../database/entities/user.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { AuthResponseDto, TokenResponseDto } from './dto/auth-response.dto';
+import { AuthResultDto, TokenResponseDto } from './dto/auth-response.dto';
 
 const ERROR = {
   EMAIL_EXISTS: 'User with this email already exists',
@@ -33,7 +33,7 @@ export class AuthService {
     private configService: ConfigService,
   ) { }
 
-  async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
+  async register(registerDto: RegisterDto): Promise<AuthResultDto> {
     const { email, password } = registerDto;
     const normalizedEmail = email.toLowerCase();
 
@@ -61,7 +61,7 @@ export class AuthService {
     return this._buildAuthResponse(user);
   }
 
-  async login(loginDto: LoginDto): Promise<AuthResponseDto> {
+  async login(loginDto: LoginDto): Promise<AuthResultDto> {
     const { email, password } = loginDto;
     const normalizedEmail = email.toLowerCase();
 
@@ -86,7 +86,7 @@ export class AuthService {
     return this._buildAuthResponse(user);
   }
 
-  async refreshToken(userId: string, refreshToken: string): Promise<TokenResponseDto> {
+  async refreshToken(userId: string): Promise<TokenResponseDto> {
     const user = await this.userRepository.findOne({
       where: { id: userId },
       select: ['id', 'email', 'tokenVersion'],
@@ -96,13 +96,14 @@ export class AuthService {
 
     return {
       accessToken: this._generateAccessToken(user),
+      refreshToken: this._generateRefreshToken(user),
     };
   }
 
   async logout(userId: string): Promise<void> {
     await this.userRepository.update(
       { id: userId },
-      { tokenVersion: () => '"tokenVersion" + 1' }
+      { tokenVersion: () => '"token_version" + 1' }
     );
 
     this.logger.log(`User logged out: ${userId}`);
@@ -126,7 +127,7 @@ export class AuthService {
     });
   }
 
-  private _buildAuthResponse(user: User): AuthResponseDto {
+  private _buildAuthResponse(user: User): AuthResultDto {
     return {
       user: {
         id: user.id,

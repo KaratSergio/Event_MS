@@ -1,6 +1,6 @@
 import {
   Controller, Get, Post, Body, Patch, Param, Delete,
-  UseGuards, Request, HttpCode, HttpStatus
+  UseGuards, Request, HttpCode, HttpStatus, Query
 } from '@nestjs/common';
 import {
   ApiTags, ApiBearerAuth,
@@ -27,9 +27,13 @@ export class EventsController {
   @Get()
   @ApiOperation({ summary: 'Get all public events' })
   @ApiResponse({ status: 200, type: [EventResponseDto] })
-  async findAll(@Request() req) {
+  async findAll(
+    @Request() req,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
     const userId = req.user?.id;
-    return this.eventsService.findAllPublic(userId);
+    return this.eventsService.findAllPublic(userId, page, limit);
   }
 
   @Get(':id')
