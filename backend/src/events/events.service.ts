@@ -41,7 +41,6 @@ export class EventsService {
     if (!organizer) throw new NotFoundException(ERROR.USER_NOT_FOUND);
 
     this._validateEventDate(dto.dateTime);
-    this._validateCapacity(dto.capacity);
 
     const event = this.eventRepository.create({
       ...dto,
@@ -149,7 +148,7 @@ export class EventsService {
       if (existing) throw new BadRequestException(ERROR.ALREADY_JOINED);
 
       const count = await manager.count(Participant, { where: { eventId } });
-      if (event.capacity && count >= event.capacity) throw new BadRequestException(ERROR.EVENT_FULL);
+      if (count >= event.capacity) throw new BadRequestException(ERROR.EVENT_FULL);
 
       await manager.save(Participant, { eventId, userId });
       this.logger.log(`User ${userId} joined event ${eventId}`);
@@ -211,8 +210,8 @@ export class EventsService {
     }
   }
 
-  private _validateCapacity(capacity?: number): void {
-    if (capacity !== undefined && capacity < 1) {
+  private _validateCapacity(capacity: number): void {
+    if (capacity < 1) {
       throw new BadRequestException(ERROR.INVALID_CAPACITY);
     }
   }

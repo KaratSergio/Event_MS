@@ -7,9 +7,7 @@ export interface EventParticipant {
   userId: string;
   eventId: string;
   joinedAt: string;
-  user?: {
-    email: string;
-  };
+  userEmail: string;
 }
 
 export interface EventsApiResponse {
@@ -23,7 +21,7 @@ export interface Event {
   description: string;
   dateTime: string; // ISO string
   location: string;
-  capacity: number | null;
+  capacity: number;
   visibility: 'public' | 'private';
   organizerId: string;
   organizer?: EventOrganizer;
@@ -40,7 +38,7 @@ export interface CreateEventDto {
   description: string;
   dateTime: string;
   location: string;
-  capacity?: number | null;
+  capacity: number;
   visibility: 'public' | 'private';
 }
 

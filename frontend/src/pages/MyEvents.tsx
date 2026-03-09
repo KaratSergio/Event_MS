@@ -111,7 +111,7 @@ export default function MyEvents() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
           <p className="mt-4 text-gray-600">Loading your events...</p>
@@ -122,7 +122,7 @@ export default function MyEvents() {
 
   if (userEvents.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="flex items-center justify-center p-4">
         <div className="max-w-md w-full text-center">
           <div className="bg-white rounded-2xl shadow-xl p-8">
             <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-100 rounded-full mb-6">
@@ -147,7 +147,7 @@ export default function MyEvents() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-4 sm:py-8">
+    <div className="py-4 sm:py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -328,37 +328,6 @@ export default function MyEvents() {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-
-        {/* Event Count Summary */}
-        <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="bg-white rounded-lg p-3 border border-gray-200">
-            <p className="text-xs text-gray-500">Total Events</p>
-            <p className="text-xl font-bold text-gray-900">{userEvents.length}</p>
-          </div>
-          <div className="bg-white rounded-lg p-3 border border-gray-200">
-            <p className="text-xs text-gray-500">As Organizer</p>
-            <p className="text-xl font-bold text-purple-600">
-              {userEvents.filter(e => e.organizerId === user?.id).length}
-            </p>
-          </div>
-          <div className="bg-white rounded-lg p-3 border border-gray-200">
-            <p className="text-xs text-gray-500">As Participant</p>
-            <p className="text-xl font-bold text-blue-600">
-              {userEvents.filter(e => e.organizerId !== user?.id).length}
-            </p>
-          </div>
-          <div className="bg-white rounded-lg p-3 border border-gray-200">
-            <p className="text-xs text-gray-500">This Month</p>
-            <p className="text-xl font-bold text-green-600">
-              {userEvents.filter(e => {
-                const eventDate = new Date(e.dateTime);
-                const now = new Date();
-                return eventDate.getMonth() === now.getMonth() &&
-                  eventDate.getFullYear() === now.getFullYear();
-              }).length}
-            </p>
           </div>
         </div>
       </div>

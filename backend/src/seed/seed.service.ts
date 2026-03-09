@@ -93,7 +93,7 @@ export class SeedService implements OnModuleInit {
         description: 'Casual networking event for tech professionals',
         dateTime: nextWeek,
         location: 'Downtown Cafe',
-        // capacity: undefined , // unlimited
+        capacity: 7,
         visibility: 'public',
         organizerId: user2.id,
       });
@@ -122,8 +122,8 @@ export class SeedService implements OnModuleInit {
 
       this.logger.log('✓ Seeding completed!');
       this.logger.log('\nTest credentials:');
-      this.logger.log('Bob Dylan: bob@g.com / 123456');
-      this.logger.log('Jane Smith: jane@g.com / 123456');
+      this.logger.log('bob@g.com / 123456');
+      this.logger.log('jane@g.com / 123456');
 
     } catch (error) {
       this.logger.error('Seeding failed', error.stack);

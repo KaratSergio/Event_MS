@@ -1,7 +1,6 @@
 import {
   IsString, IsNotEmpty, IsDateString,
-  IsOptional, IsNumber,
-  Min, IsEnum,
+  IsNumber, Min, IsEnum,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -30,11 +29,10 @@ export class CreateEventDto {
   @IsNotEmpty()
   location: string;
 
-  @ApiProperty({ example: 100, required: false })
-  @IsOptional()
+  @ApiProperty({ example: 100, required: true })
   @IsNumber()
   @Min(1)
-  capacity?: number;
+  capacity: number;
 
   @ApiProperty({ enum: EventVisibility, example: EventVisibility.PUBLIC })
   @IsEnum(EventVisibility)

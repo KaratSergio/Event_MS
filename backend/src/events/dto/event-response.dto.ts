@@ -35,8 +35,8 @@ export class EventResponseDto {
   @ApiProperty()
   location: string;
 
-  @ApiProperty({ required: false })
-  capacity?: number;
+  @ApiProperty()
+  capacity: number;
 
   @ApiProperty()
   visibility: string;
