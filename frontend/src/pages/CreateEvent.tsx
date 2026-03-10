@@ -23,7 +23,7 @@ export default function CreateEvent() {
         description: data.description,
         dateTime: dateTime.toISOString(),
         location: data.location,
-        capacity: data.capacity ? Number(data.capacity) : null,
+        capacity: data.capacity,
         visibility: data.visibility,
       });
 

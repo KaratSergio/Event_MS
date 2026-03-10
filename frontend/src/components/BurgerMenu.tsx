@@ -64,11 +64,15 @@ export default function BurgerMenu({ isOpen, onToggle, onClose, user, onLogout }
         >
           {/* decor */}
           <div
-            className={`absolute left-10 top-1/2 w-20 h-20 bg-green-500 transform rotate-45 transition-all duration-700 delay-300 ${isOpen ? 'scale-100 opacity-20' : 'scale-0 opacity-0'
+            className={`absolute left-40 top-1/3 w-24 h-24 bg-red-500 transform rotate-45 transition-all duration-1000 delay-600 ${isOpen ? 'scale-100 opacity-20' : 'scale-0 opacity-0'
               }`}
           />
           <div
-            className={`absolute -right-10 bottom-20 w-32 h-32 bg-green-400 transform rotate-45 transition-all duration-700 delay-500 ${isOpen ? 'scale-100 opacity-20' : 'scale-0 opacity-0'
+            className={`absolute left-10 top-1/2 w-20 h-20 bg-yellow-500 transform rotate-45 transition-all duration-400 delay-360 ${isOpen ? 'scale-100 opacity-20' : 'scale-0 opacity-0'
+              }`}
+          />
+          <div
+            className={`absolute -right-10 bottom-20 w-32 h-32 bg-blue-400 transform rotate-45 transition-all duration-800 delay-500 ${isOpen ? 'scale-100 opacity-20' : 'scale-0 opacity-0'
               }`}
           />
 

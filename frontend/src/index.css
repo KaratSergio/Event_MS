@@ -17,6 +17,7 @@ body {
   min-height: 100vh;
 }
 
+/* burger menu animation */
 @keyframes fadeIn {
   from {
     opacity: 0;
