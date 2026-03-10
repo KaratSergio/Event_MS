@@ -26,7 +26,7 @@ export class EventsController {
 
   @Get()
   @ApiOperation({ summary: 'Get all public events' })
-  @ApiResponse({ status: 200, type: [EventResponseDto] })
+  @ApiResponse({ status: HttpStatus.OK, type: [EventResponseDto] })
   async findAll(
     @Request() req,
     @Query('page') page?: number,
@@ -38,8 +38,8 @@ export class EventsController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get event by id' })
-  @ApiResponse({ status: 200, type: EventResponseDto })
-  @ApiResponse({ status: 404, description: 'Event not found' })
+  @ApiResponse({ status: HttpStatus.OK, type: EventResponseDto })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Event not found' })
   async findOne(@Param('id') id: string, @Request() req) {
     const userId = req.user?.id;
     return this.eventsService.findOne(id, userId);
@@ -49,7 +49,8 @@ export class EventsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create new event' })
-  @ApiResponse({ status: 201, type: EventResponseDto })
+  @ApiResponse({ status: HttpStatus.CREATED, type: EventResponseDto })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Invalid data or past date' })
   async create(@Body() createEventDto: CreateEventDto, @Request() req) {
     return this.eventsService.create(createEventDto, req.user.id);
   }
@@ -58,8 +59,9 @@ export class EventsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update event' })
-  @ApiResponse({ status: 200, type: EventResponseDto })
-  @ApiResponse({ status: 403, description: 'Only organizer can edit' })
+  @ApiResponse({ status: HttpStatus.OK, type: EventResponseDto })
+  @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Only organizer can edit' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Event not found' })
   async update(
     @Param('id') id: string,
     @Body() updateEventDto: UpdateEventDto,
@@ -72,8 +74,9 @@ export class EventsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete event' })
-  @ApiResponse({ status: 200, description: 'Event deleted' })
-  @ApiResponse({ status: 403, description: 'Only organizer can delete' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Event deleted' })
+  @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Only organizer can delete' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Event not found' })
   @HttpCode(HttpStatus.OK)
   async remove(@Param('id') id: string, @Request() req) {
     return this.eventsService.remove(id, req.user.id);
@@ -83,7 +86,7 @@ export class EventsController {
 
   @Get(':id/participants')
   @ApiOperation({ summary: 'Get all event participants' })
-  @ApiResponse({ status: 200, type: [ParticipantResponseDto] })
+  @ApiResponse({ status: HttpStatus.OK, type: [ParticipantResponseDto] })
   async getParticipants(@Param('id') id: string) {
     return this.eventsService.getParticipants(id);
   }
@@ -92,28 +95,31 @@ export class EventsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Join event' })
-  @ApiResponse({ status: 201, description: 'Joined successfully' })
-  @ApiResponse({ status: 400, description: 'Cannot join' })
+  @ApiResponse({ status: HttpStatus.CREATED, description: 'Joined successfully' })
+  @ApiResponse({ status: HttpStatus.CONFLICT, description: 'Already joined or event full' })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Cannot join own event' })
   async join(@Param('id') id: string, @Request() req) {
-    return this.eventsService.join(id, req.user.id);
+    await this.eventsService.join(id, req.user.id);
+    return { message: 'Successfully joined the event' };
   }
 
   @Delete(':id/participants/me')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Leave event' })
-  @ApiResponse({ status: 200, description: 'Left successfully' })
-  @ApiResponse({ status: 400, description: 'Cannot leave' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Left successfully' })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Not a participant' })
   @HttpCode(HttpStatus.OK)
   async leave(@Param('id') id: string, @Request() req) {
-    return this.eventsService.leave(id, req.user.id);
+    await this.eventsService.leave(id, req.user.id);
+    return { message: 'Successfully left the event' };
   }
 
   @Get(':id/participants/me')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Check if current user is participant' })
-  @ApiResponse({ status: 200, type: ParticipationStatusDto })
+  @ApiResponse({ status: HttpStatus.OK, type: ParticipationStatusDto })
   async checkParticipation(@Param('id') id: string, @Request() req) {
     const isParticipant = await this.eventsService.isParticipant(id, req.user.id);
     return { isParticipant };
@@ -121,7 +127,7 @@ export class EventsController {
 
   @Get(':id/participants/count')
   @ApiOperation({ summary: 'Get participants count' })
-  @ApiResponse({ status: 200, type: ParticipantsCountDto })
+  @ApiResponse({ status: HttpStatus.OK, type: ParticipantsCountDto })
   async getParticipantsCount(@Param('id') id: string) {
     const count = await this.eventsService.getParticipantsCount(id);
     return { count };

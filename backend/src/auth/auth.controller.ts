@@ -23,8 +23,8 @@ export class AuthController {
 
   @Post('register')
   @ApiOperation({ summary: 'Register new user' })
-  @ApiResponse({ status: 201, description: 'User registered successfully', type: AuthResponseDto })
-  @ApiResponse({ status: 400, description: 'Bad request - email already exists' })
+  @ApiResponse({ status: HttpStatus.CREATED, description: 'User registered successfully', type: AuthResponseDto })
+  @ApiResponse({ status: HttpStatus.CONFLICT, description: 'Email already exists' })
   async register(
     @Body() registerDto: RegisterDto,
     @Res({ passthrough: true }) res: Response,
@@ -37,8 +37,8 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login user' })
-  @ApiResponse({ status: 200, description: 'Login successful', type: AuthResponseDto })
-  @ApiResponse({ status: 401, description: 'Unauthorized - invalid credentials' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Login successful', type: AuthResponseDto })
+  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Invalid credentials' })
   async login(
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) res: Response,
@@ -51,19 +51,22 @@ export class AuthController {
   @Post('refresh')
   @UseGuards(RefreshGuard)
   @HttpCode(HttpStatus.OK)
+  @ApiResponse({ status: HttpStatus.OK, description: 'Token refreshed' })
+  @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Invalid refresh token' })
   async refreshToken(
     @GetUser() user: User,
     @Res({ passthrough: true }) res: Response,
   ) {
     const tokens = await this.authService.refreshToken(user.id);
     this._setTokenCookies(res, tokens.accessToken, tokens.refreshToken);
-    return { message: 'ok' };
+    return { message: 'Token refreshed successfully' };
   }
 
   @Post('logout')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
+  @ApiResponse({ status: HttpStatus.OK, description: 'Logged out successfully' })
   async logout(
     @GetUser() user: User,
     @Res({ passthrough: true }) res: Response,
@@ -71,13 +74,14 @@ export class AuthController {
     if (!user) return { message: 'Already logged out' };
     await this.authService.logout(user.id);
     this._clearTokenCookies(res);
-
     return { message: 'Logged out successfully' };
   }
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @ApiResponse({ status: HttpStatus.OK, description: 'Current user profile' })
+  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized' })
   getMe(@GetUser() user: User) {
     return {
       id: user.id,

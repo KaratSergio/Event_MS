@@ -4,6 +4,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -20,7 +21,10 @@ async function bootstrap() {
     whitelist: true,
     forbidNonWhitelisted: true,
     transform: true,
+    disableErrorMessages: process.env.NODE_ENV === 'production',
   }));
+
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   // Swagger
   const config = new DocumentBuilder()
@@ -34,6 +38,13 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  await app.listen(process.env.PORT || 5000);
+  const port = process.env.PORT || 5000;
+
+  await app.listen(port, '0.0.0.0');
+
+  const baseUrl = `http://localhost:${port}`;
+
+  console.log(`Application is running on: ${baseUrl}`);
+  console.log(`Swagger docs: ${baseUrl}/api/docs`);
 }
 bootstrap();

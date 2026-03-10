@@ -1,8 +1,5 @@
 import {
   Injectable, Logger,
-  UnauthorizedException,
-  BadRequestException,
-  ForbiddenException
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -13,14 +10,11 @@ import { User } from '../database/entities/user.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { AuthResultDto, TokenResponseDto } from './dto/auth-response.dto';
-
-const ERROR = {
-  EMAIL_EXISTS: 'User with this email already exists',
-  INVALID_CREDENTIALS: 'Invalid email or password',
-  USER_NOT_FOUND: 'User not found',
-  INVALID_REFRESH_TOKEN: 'Invalid refresh token',
-  TOKEN_VERSION_MISMATCH: 'Token version mismatch',
-} as const;
+import {
+  EmailAlreadyExistsException,
+  InvalidCredentialsException,
+  UserNotFoundException,
+} from '../common/exceptions/custom-exceptions';
 
 @Injectable()
 export class AuthService {
@@ -44,7 +38,7 @@ export class AuthService {
 
     if (existingUser) {
       this.logger.warn(`Registration attempt with existing email: ${normalizedEmail}`);
-      throw new BadRequestException(ERROR.EMAIL_EXISTS);
+      throw new EmailAlreadyExistsException();
     }
 
     const hashedPassword = await this._hashPassword(password);
@@ -72,14 +66,14 @@ export class AuthService {
 
     if (!user) {
       this.logger.warn(`Login failed - user not found: ${normalizedEmail}`);
-      throw new UnauthorizedException(ERROR.INVALID_CREDENTIALS);
+      throw new InvalidCredentialsException();
     }
 
     const isPasswordValid = await argon2.verify(user.passwordHash, password);
 
     if (!isPasswordValid) {
       this.logger.warn(`Login failed - invalid password for: ${normalizedEmail}`);
-      throw new UnauthorizedException(ERROR.INVALID_CREDENTIALS);
+      throw new InvalidCredentialsException();
     }
 
     this.logger.log(`User logged in: ${user.id}`);
@@ -92,7 +86,7 @@ export class AuthService {
       select: ['id', 'email', 'tokenVersion'],
     });
 
-    if (!user) throw new ForbiddenException(ERROR.USER_NOT_FOUND);
+    if (!user) throw new UserNotFoundException();
 
     return {
       accessToken: this._generateAccessToken(user),

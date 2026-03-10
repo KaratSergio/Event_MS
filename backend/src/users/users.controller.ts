@@ -1,5 +1,5 @@
-import { Controller, Get, Param, UseGuards, Request } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { Controller, Get, UseGuards, Request, HttpStatus } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { EventsService } from '../events/events.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
@@ -12,6 +12,7 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user profile' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'User profile' })
   async getMe(@Request() req) {
     return {
       id: req.user.id,
@@ -23,6 +24,7 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user events (organizer + participant)' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'List of user events' })
   async getMyEvents(@Request() req) {
     return this.eventsService.getUserEvents(req.user.id);
   }
@@ -31,6 +33,7 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get events where user is participant' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'List of participations' })
   async getMyParticipations(@Request() req) {
     return this.eventsService.getUserParticipations(req.user.id);
   }

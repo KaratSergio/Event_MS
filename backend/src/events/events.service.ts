@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Event } from '../database/entities/event.entity';
@@ -8,18 +8,17 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { EventResponseDto } from './dto/event-response.dto';
 import { ParticipantResponseDto } from './dto/participant-response.dto';
-
-const ERROR = {
-  USER_NOT_FOUND: 'User not found',
-  EVENT_NOT_FOUND: 'Event not found',
-  PAST_DATE: 'Cannot create event in the past',
-  NOT_ORGANIZER: 'Only organizer can edit',
-  CANNOT_JOIN_OWN: 'Organizer cannot join their own event',
-  ALREADY_JOINED: 'Already joined',
-  EVENT_FULL: 'Event is full',
-  NOT_PARTICIPANT: 'Not a participant',
-  INVALID_CAPACITY: 'Capacity must be at least 1',
-} as const;
+import {
+  EventNotFoundException,
+  UserNotFoundException,
+  NotOrganizerException,
+  PastDateException,
+  InvalidCapacityException,
+  CannotJoinOwnEventException,
+  AlreadyJoinedException,
+  EventFullException,
+  NotParticipantException
+} from '../common/exceptions/custom-exceptions';
 
 @Injectable()
 export class EventsService {
@@ -38,7 +37,7 @@ export class EventsService {
 
   async create(dto: CreateEventDto, organizerId: string): Promise<EventResponseDto> {
     const organizer = await this.userRepository.findOne({ where: { id: organizerId } });
-    if (!organizer) throw new NotFoundException(ERROR.USER_NOT_FOUND);
+    if (!organizer) throw new UserNotFoundException();
 
     this._validateEventDate(dto.dateTime);
     this._validateCapacity(dto.capacity);
@@ -80,14 +79,14 @@ export class EventsService {
       relations: ['organizer', 'participants', 'participants.user'],
     });
 
-    if (!event) throw new NotFoundException(ERROR.EVENT_NOT_FOUND);
+    if (!event) throw new EventNotFoundException();
     return this._toResponseDto(event, userId);
   }
 
   async update(id: string, dto: UpdateEventDto, userId: string): Promise<EventResponseDto> {
     const event = await this.eventRepository.findOne({ where: { id } });
-    if (!event) throw new NotFoundException(ERROR.EVENT_NOT_FOUND);
-    if (event.organizerId !== userId) throw new ForbiddenException(ERROR.NOT_ORGANIZER);
+    if (!event) throw new EventNotFoundException();
+    if (event.organizerId !== userId) throw new NotOrganizerException();
 
     if (dto.dateTime) {
       this._validateEventDate(dto.dateTime);
@@ -108,8 +107,8 @@ export class EventsService {
 
   async remove(id: string, userId: string): Promise<void> {
     const event = await this.eventRepository.findOne({ where: { id } });
-    if (!event) throw new NotFoundException(ERROR.EVENT_NOT_FOUND);
-    if (event.organizerId !== userId) throw new ForbiddenException(ERROR.NOT_ORGANIZER);
+    if (!event) throw new EventNotFoundException();
+    if (event.organizerId !== userId) throw new NotOrganizerException();
 
     await this.eventRepository.remove(event);
     this.logger.log(`Event deleted: ${id}`);
@@ -142,14 +141,14 @@ export class EventsService {
         lock: { mode: 'pessimistic_write' },
       });
 
-      if (!event) throw new NotFoundException(ERROR.EVENT_NOT_FOUND);
-      if (event.organizerId === userId) throw new BadRequestException(ERROR.CANNOT_JOIN_OWN);
+      if (!event) throw new EventNotFoundException();
+      if (event.organizerId === userId) throw new CannotJoinOwnEventException();
 
       const existing = await manager.findOne(Participant, { where: { eventId, userId } });
-      if (existing) throw new BadRequestException(ERROR.ALREADY_JOINED);
+      if (existing) throw new AlreadyJoinedException();
 
       const count = await manager.count(Participant, { where: { eventId } });
-      if (event.capacity && count >= event.capacity) throw new BadRequestException(ERROR.EVENT_FULL);
+      if (event.capacity && count >= event.capacity) throw new EventFullException();
 
       await manager.save(Participant, { eventId, userId });
       this.logger.log(`User ${userId} joined event ${eventId}`);
@@ -158,7 +157,7 @@ export class EventsService {
 
   async leave(eventId: string, userId: string): Promise<void> {
     const participant = await this.participantRepository.findOne({ where: { eventId, userId } });
-    if (!participant) throw new BadRequestException(ERROR.NOT_PARTICIPANT);
+    if (!participant) throw new NotParticipantException();
 
     await this.participantRepository.remove(participant);
     this.logger.log(`User ${userId} left event ${eventId}`);
@@ -207,13 +206,13 @@ export class EventsService {
   private _validateEventDate(dateTime: string): void {
     const eventDate = new Date(dateTime);
     if (eventDate < new Date()) {
-      throw new BadRequestException(ERROR.PAST_DATE);
+      throw new PastDateException();
     }
   }
 
   private _validateCapacity(capacity?: number): void {
-    if (capacity !== undefined && capacity < 1) {
-      throw new BadRequestException(ERROR.INVALID_CAPACITY);
+    if (capacity !== undefined && capacity !== null && capacity < 1) {
+      throw new InvalidCapacityException();
     }
   }
 
