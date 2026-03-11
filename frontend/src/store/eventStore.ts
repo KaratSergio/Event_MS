@@ -19,7 +19,7 @@ interface EventState {
   clearError: () => void;
 }
 
-export const useEventStore = create<EventState>((set, get) => ({
+export const useEventStore = create<EventState>((set, _) => ({
   events: [],
   currentEvent: null,
   userEvents: [],

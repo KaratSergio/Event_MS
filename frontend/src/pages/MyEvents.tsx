@@ -25,6 +25,7 @@ import { DayViewWithWeek } from '../components/calendar/DayViewWithWeek';
 import { EmptyState } from '../components/calendar/EmptyState';
 import { getCalendarHeight } from '../components/calendar/utils';
 import { injectCalendarStyles } from '../components/calendar/styles';
+import LoadingState from '../components/ui/LoadingState';
 
 const locales = { 'en-US': enUS };
 const localizer = dateFnsLocalizer({
@@ -117,14 +118,7 @@ export default function MyEvents() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-100">
-        <div className="text-center">
-          <div className="inline-block h-6 sm:h-8 w-6 sm:w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
-          <p className="mt-2 sm:mt-4 text-sm sm:text-base text-gray-600">Loading your events...</p>
-        </div>
-      </div>
-    );
+    return <LoadingState message="Loading your events..." fullScreen />;
   }
 
   if (userEvents.length === 0) {

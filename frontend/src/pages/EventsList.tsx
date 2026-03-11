@@ -8,9 +8,10 @@ import {
   UserGroupIcon, MagnifyingGlassIcon,
   FunnelIcon, ClockIcon, XMarkIcon
 } from '@heroicons/react/24/outline';
-
-import { JoinButton, LeaveButton, FullButton, DisabledButton } from '../components/ui/Button';
-
+import { JoinButton, LeaveButton, FullButton, DisabledButton, EndedButton } from '../components/ui/Button';
+import LoadingState from '../components/ui/LoadingState';
+import ErrorState from '../components/ui/ErrorState';
+import { formatEventListItem } from '../utils/formatDate';
 
 export default function EventsList() {
   const { events, isLoading, error, fetchPublicEvents, joinEvent, leaveEvent } = useEvents();
@@ -22,20 +23,18 @@ export default function EventsList() {
     date: '',
   });
 
+  const isEventPassed = (eventDateTime: string) => {
+    return new Date(eventDateTime) < new Date();
+  };
+
   useEffect(() => {
     fetchPublicEvents();
   }, [fetchPublicEvents]);
 
-  const eventsArray = useMemo(() => {
-    if (Array.isArray(events)) return events;
-    if (events && typeof events === 'object' && 'data' in events) {
-      return (events as any).data || [];
-    }
-    return [];
-  }, [events]);
-
   const filteredEvents = useMemo(() => {
-    return eventsArray.filter((event: Event) => {
+    if (!Array.isArray(events)) return [];
+
+    return events.filter((event: Event) => {
       const matchesSearch =
         (event.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
         (event.description?.toLowerCase() || '').includes(searchTerm.toLowerCase());
@@ -48,7 +47,7 @@ export default function EventsList() {
 
       return matchesSearch && matchesLocation && matchesDate;
     });
-  }, [eventsArray, searchTerm, filters]);
+  }, [events, searchTerm, filters]);
 
   const clearFilters = () => {
     setSearchTerm('');
@@ -56,48 +55,8 @@ export default function EventsList() {
     setShowFilters(false);
   };
 
-  const formatDateTime = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      return {
-        date: date.toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric'
-        }),
-        time: date.toLocaleTimeString('en-US', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false
-        })
-      };
-    } catch {
-      return { date: 'Invalid date', time: '' };
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="inline-block h-6 w-6 sm:h-8 sm:w-8 animate-spin rounded-full border-4 border-solid border-green-600 border-r-transparent"></div>
-          <p className="mt-3 text-xs sm:text-sm md:text-base text-gray-600">Loading events...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-3 sm:p-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="bg-red-50 border-l-4 border-red-500 p-3 sm:p-4 rounded-lg">
-            <p className="text-xs sm:text-sm text-red-700">{error}</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (isLoading) return <LoadingState message="Loading events..." fullScreen />;
+  if (error) return <ErrorState message={error} fullScreen onRetry={fetchPublicEvents} />
 
   return (
     <div className="py-3 sm:py-4 md:py-8">
@@ -205,7 +164,7 @@ export default function EventsList() {
         {filteredEvents.length > 0 ? (
           <div className="grid grid-cols-1 xs:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
             {filteredEvents.map((event: Event) => {
-              const { date, time } = formatDateTime(event.dateTime);
+              const { date, time } = formatEventListItem(event.dateTime);
 
               return (
                 <div
@@ -273,25 +232,37 @@ export default function EventsList() {
                         Event Full
                       </FullButton>
                     ) : event.userJoined ? (
-                      <LeaveButton
-                        fullWidth
-                        onClick={(e) => {
-                          e.preventDefault();
-                          leaveEvent(event.id);
-                        }}
-                      >
-                        Leave Event
-                      </LeaveButton>
+                      isEventPassed(event.dateTime) ? (
+                        <DisabledButton fullWidth>
+                          Event Ended
+                        </DisabledButton>
+                      ) : (
+                        <LeaveButton
+                          fullWidth
+                          onClick={(e) => {
+                            e.preventDefault();
+                            leaveEvent(event.id);
+                          }}
+                        >
+                          Leave Event
+                        </LeaveButton>
+                      )
                     ) : (
-                      <JoinButton
-                        fullWidth
-                        onClick={(e) => {
-                          e.preventDefault();
-                          joinEvent(event.id);
-                        }}
-                      >
-                        Join Event
-                      </JoinButton>
+                      isEventPassed(event.dateTime) ? (
+                        <EndedButton fullWidth>
+                          Event Ended
+                        </EndedButton>
+                      ) : (
+                        <JoinButton
+                          fullWidth
+                          onClick={(e) => {
+                            e.preventDefault();
+                            joinEvent(event.id);
+                          }}
+                        >
+                          Join Event
+                        </JoinButton>
+                      )
                     )}
                   </div>
                 </div>
@@ -303,10 +274,10 @@ export default function EventsList() {
             <div className="max-w-xs sm:max-w-sm mx-auto px-3 sm:px-4">
               <CalendarIcon className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 mx-auto text-gray-400 mb-2 sm:mb-3" />
               <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 mb-1">
-                {eventsArray.length === 0 ? 'No events available' : 'No matching events'}
+                {events.length === 0 ? 'No events available' : 'No matching events'}
               </h3>
               <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">
-                {eventsArray.length === 0
+                {events.length === 0
                   ? 'No public events available at the moment'
                   : 'Try adjusting your search or filters'}
               </p>

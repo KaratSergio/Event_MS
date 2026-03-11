@@ -18,7 +18,7 @@ export interface EventFormData {
 interface EventFormProps {
   mode: 'create' | 'edit';
   initialData?: Partial<EventFormData> & { dateTime?: string };
-  onSubmit: (data: EventFormData) => Promise<void>;
+  onSubmit: (data: EventFormData & { dateTime: string }) => Promise<void>;
   onCancel?: () => void;
   isSubmitting?: boolean;
   error?: string;
@@ -99,8 +99,10 @@ export default function EventForm({
 
   const onFormSubmit = async (data: EventFormData) => {
     try {
-      if (mode === 'edit' && selectedDate && selectedTime) {
-        const selectedDateTime = new Date(`${selectedDate}T${selectedTime}`);
+      const dateTime = new Date(`${data.date}T${data.time}`).toISOString();
+
+      if (mode === 'edit') {
+        const selectedDateTime = new Date(dateTime);
         if (selectedDateTime < new Date()) {
           setError('root', {
             message: 'Event date must be in the future'
@@ -109,7 +111,10 @@ export default function EventForm({
         }
       }
 
-      await onSubmit(data);
+      await onSubmit({
+        ...data,
+        dateTime
+      });
     } catch (error) {
       setError('root', {
         message: `Failed to ${mode} event. Please try again.`
@@ -282,7 +287,12 @@ export default function EventForm({
           type="number"
           min="1"
           {...register('capacity', {
-            setValueAs: (v) => v === '' ? undefined : Number(v),
+            setValueAs: (v) => {
+
+              if (v === '' || v === null || v === undefined) return null;
+              const num = Number(v);
+              return isNaN(num) ? null : num;
+            },
             validate: (value) => {
               if (value == null) return true;
               if (value < 1) return 'Capacity must be at least 1';

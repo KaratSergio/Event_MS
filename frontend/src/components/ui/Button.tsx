@@ -1,7 +1,7 @@
 import { type ButtonHTMLAttributes, forwardRef } from 'react';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'join' | 'leave' | 'full' | 'disabled';
+  variant?: 'primary' | 'join' | 'leave' | 'full' | 'ended' | 'disabled';
   size?: 'xs' | 'sm' | 'md' | 'lg';
   fullWidth?: boolean;
   loading?: boolean;
@@ -11,10 +11,10 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantClasses = {
   primary: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500',
-  secondary: 'bg-gray-100 text-gray-700 hover:bg-gray-200 focus:ring-gray-500',
   join: 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500',
   leave: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
   full: 'bg-red-100 text-red-600 cursor-not-allowed focus:ring-red-500',
+  ended: 'bg-yellow-100 text-yellow-600 cursor-not-allowed focus:ring-gray-500',
   disabled: 'bg-gray-100 text-gray-500 cursor-not-allowed focus:ring-gray-500',
 };
 
@@ -108,8 +108,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 Button.displayName = 'Button';
 
 export const PrimaryButton = (props: ButtonProps) => <Button variant="primary" {...props} />;
-export const SecondaryButton = (props: ButtonProps) => <Button variant="secondary" {...props} />;
 export const JoinButton = (props: ButtonProps) => <Button variant="join" {...props} />;
 export const LeaveButton = (props: ButtonProps) => <Button variant="leave" {...props} />;
 export const FullButton = (props: ButtonProps) => <Button variant="full" {...props} />;
+export const EndedButton = (props: ButtonProps) => <Button variant="ended" {...props} />;
 export const DisabledButton = (props: ButtonProps) => <Button variant="disabled" {...props} />;

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useEvents } from '../services/hooks/useEvents';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import EventForm, { type EventFormData } from '../components/EventForm';
+import { getErrorMessage } from '../utils/getErrorMessage';
 
 export default function CreateEvent() {
   const navigate = useNavigate();
@@ -13,7 +14,7 @@ export default function CreateEvent() {
     try {
       const dateTime = new Date(`${data.date}T${data.time}`);
 
-      await createEvent({
+      const newEvent = await createEvent({
         title: data.title,
         description: data.description,
         dateTime: dateTime.toISOString(),
@@ -22,9 +23,9 @@ export default function CreateEvent() {
         visibility: data.visibility,
       });
 
-      navigate('/events');
-    } catch (err: any) {
-      setError(err.message || 'Failed to create event');
+      navigate(`/events/${newEvent.id}`);
+    } catch (err) {
+      setError(getErrorMessage(err));
     }
   };
 

@@ -4,12 +4,16 @@ import { useEvents } from '../services/hooks/useEvents';
 import { useAuth } from '../services/hooks/useAuth';
 import {
   CalendarIcon, MapPinIcon, UserGroupIcon,
-  PencilIcon, TrashIcon, ArrowLeftIcon,
+  PencilIcon, TrashIcon,
   ChevronLeftIcon, ChevronRightIcon
 } from '@heroicons/react/24/outline';
 import Modal from '../components/ui/Modal';
-import EventForm from '../components/EventForm';
+import EventForm, { type EventFormData } from '../components/EventForm';
 import DeleteConfirmation from '../components/DeleteConfirmation';
+import { getErrorMessage } from '../utils/getErrorMessage';
+import ErrorState from '../components/ui/ErrorState';
+import LoadingState from '../components/ui/LoadingState';
+import { formatEventDetails } from '../utils/formatDate';
 
 export default function EventDetails() {
   const { id } = useParams<{ id: string }>();
@@ -22,6 +26,8 @@ export default function EventDetails() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [editError, setEditError] = useState('');
+
+  const isEventPassed = currentEvent ? new Date(currentEvent.dateTime) < new Date() : false;
 
   useEffect(() => {
     if (id) fetchEventById(id);
@@ -40,69 +46,42 @@ export default function EventDetails() {
     }
   };
 
-  const handleEdit = async (eventData: any) => {
+  const handleEdit = async (eventData: EventFormData & { dateTime: string }) => {
     if (!id) return;
 
     setIsUpdating(true);
     setEditError('');
 
     try {
-      await updateEvent(id, eventData);
+      await updateEvent(id, {
+        title: eventData.title,
+        description: eventData.description,
+        dateTime: eventData.dateTime,
+        location: eventData.location,
+        capacity: eventData.capacity ?? null,
+        visibility: eventData.visibility,
+      });
       setShowEditModal(false);
-    } catch (err: any) {
-      setEditError(err.message || 'Failed to update event');
+    } catch (err) {
+      setEditError(getErrorMessage(err));
     } finally {
       setIsUpdating(false);
     }
   };
 
-  const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return {
-      date: date.toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      }),
-      time: date.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
-    };
-  };
-
-  if (isLoading) {
-    return (
-      <div className="bg-gray-50 flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <div className="inline-block h-6 w-6 animate-spin rounded-full border-4 border-solid border-green-600 border-r-transparent"></div>
-          <p className="mt-3 text-sm text-gray-600">Loading event details...</p>
-        </div>
-      </div>
-    );
-  }
-
+  if (isLoading) return <LoadingState message="Loading event details..." fullScreen />;
   if (error || !currentEvent) {
     return (
-      <div className="bg-gray-50 p-3">
-        <div className="max-w-3xl mx-auto">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center text-gray-600 hover:text-green-600 mb-4 text-sm transition-colors"
-          >
-            <ArrowLeftIcon className="w-3 h-3 mr-1" />
-            Back
-          </button>
-          <div className="bg-red-50 border-l-4 border-red-500 p-3 rounded-lg">
-            <p className="text-sm text-red-700">{error || 'Event not found'}</p>
-          </div>
-        </div>
-      </div>
+      <ErrorState
+        message={error || 'Event not found'}
+        onBack={() => navigate(-1)}
+        onRetry={() => id && fetchEventById(id)}
+        backLabel="Back to Events"
+      />
     );
   }
 
-  const { date, time } = formatDateTime(currentEvent.dateTime);
+  const { date, time } = formatEventDetails(currentEvent.dateTime);
 
   return (
     <div className="py-3 sm:py-6">
@@ -127,7 +106,11 @@ export default function EventDetails() {
                 <div className="flex space-x-1 self-end sm:self-auto">
                   <button
                     onClick={() => setShowEditModal(true)}
-                    className="p-1.5 text-gray-600 hover:text-green-600 rounded-lg hover:bg-green-50 transition-colors"
+                    disabled={isEventPassed}
+                    className={`p-1.5 rounded-lg transition-colors ${isEventPassed
+                      ? 'text-gray-300 cursor-not-allowed'
+                      : 'text-gray-600 hover:text-green-600 hover:bg-green-50'
+                      }`}
                     aria-label="Edit event"
                   >
                     <PencilIcon className="w-4 h-4" />
@@ -207,7 +190,11 @@ export default function EventDetails() {
             {/* Join/Leave Button */}
             {currentEvent.organizerId !== user?.id && (
               <div className="pt-3 border-t border-gray-100">
-                {currentEvent.isFull ? (
+                {isEventPassed ? (
+                  <div className="bg-gray-50 text-yellow-700 p-3 rounded-lg text-center text-sm font-medium">
+                    This event has already passed
+                  </div>
+                ) : currentEvent.isFull ? (
                   <div className="bg-red-50 text-red-700 p-3 rounded-lg text-center text-sm font-medium">
                     This event is full
                   </div>
@@ -215,7 +202,7 @@ export default function EventDetails() {
                   <button
                     onClick={() => leaveEvent(currentEvent.id)}
                     className="w-full sm:w-auto px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700
-                      transition-colors text-sm font-medium flex items-center justify-center space-x-1"
+          transition-colors text-sm font-medium flex items-center justify-center space-x-1"
                   >
                     <span>Leave Event</span>
                     <ChevronRightIcon className="w-3 h-3" />
@@ -224,7 +211,7 @@ export default function EventDetails() {
                   <button
                     onClick={() => joinEvent(currentEvent.id)}
                     className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 
-                      transition-colors text-sm font-medium flex items-center justify-center space-x-1"
+          transition-colors text-sm font-medium flex items-center justify-center space-x-1"
                   >
                     <span>Join Event</span>
                     <ChevronRightIcon className="w-3 h-3" />

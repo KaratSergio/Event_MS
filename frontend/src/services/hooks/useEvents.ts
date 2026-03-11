@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { eventsApi } from '../events/events.api';
 import { usersApi } from '../users/users.api';
 import { useEventStore } from '../../store/eventStore';
@@ -10,7 +10,7 @@ import type {
 
 export const useEvents = () => {
   const {
-    events,
+    events: storeEvents,
     currentEvent,
     userEvents,
     isLoading,
@@ -25,6 +25,15 @@ export const useEvents = () => {
     clearCurrentEvent,
     clearError
   } = useEventStore();
+
+  const events = useMemo(() => {
+    if (!storeEvents) return [];
+    if (Array.isArray(storeEvents)) return storeEvents;
+    if (storeEvents && typeof storeEvents === 'object' && 'data' in storeEvents) {
+      return (storeEvents as EventsApiResponse).data || [];
+    }
+    return [];
+  }, [storeEvents]);
 
   const fetchPublicEvents = useCallback(async (filters?: EventFilters) => {
     setLoading(true);
