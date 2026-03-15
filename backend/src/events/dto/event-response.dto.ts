@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { TagDto } from '../../tags/dto/tag.dto';
 
 class OrganizerDto {
   @ApiProperty()
@@ -64,4 +65,7 @@ export class EventResponseDto {
 
   @ApiProperty({ required: false })
   canEdit?: boolean;
+
+  @ApiProperty({ type: [TagDto], required: false })
+  tags?: TagDto[];
 }

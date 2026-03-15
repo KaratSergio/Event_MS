@@ -39,12 +39,15 @@ async function bootstrap() {
   SwaggerModule.setup('api/docs', app, document);
 
   const port = process.env.PORT || 5000;
+  const pg_port = process.env.PPG_ADMIN_PORT || 5050;
 
   await app.listen(port, '0.0.0.0');
 
   const baseUrl = `http://localhost:${port}`;
+  const pgUrl = `http://localhost:${pg_port}`;
 
   console.log(`Application is running on: ${baseUrl}`);
   console.log(`Swagger docs: ${baseUrl}/api/docs`);
+  console.log(`PG Admin: ${pgUrl}`);
 }
 bootstrap();

@@ -4,10 +4,13 @@ import { Repository } from 'typeorm';
 import { Event } from '../database/entities/event.entity';
 import { User } from '../database/entities/user.entity';
 import { Participant } from '../database/entities/participant.entity';
+import { TagsService } from '../tags/tags.service';
+import { Tag } from '../database/entities/tag.entity';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { EventResponseDto } from './dto/event-response.dto';
 import { ParticipantResponseDto } from './dto/participant-response.dto';
+import { PaginatedResponse } from './dto/paginated-response.dto';
 import {
   EventNotFoundException,
   UserNotFoundException,
@@ -31,6 +34,7 @@ export class EventsService {
     private userRepository: Repository<User>,
     @InjectRepository(Participant)
     private participantRepository: Repository<Participant>,
+    private tagsService: TagsService,
   ) { }
 
   // ========== EVENT CRUD ==========
@@ -42,10 +46,16 @@ export class EventsService {
     this._validateEventDate(dto.dateTime);
     this._validateCapacity(dto.capacity);
 
+    let tags: Tag[] = [];
+    if (dto.tags && dto.tags.length > 0) {
+      tags = await this.tagsService.findOrCreate(dto.tags);
+    }
+
     const event = this.eventRepository.create({
       ...dto,
       dateTime: new Date(dto.dateTime),
       organizerId,
+      tags,
     });
 
     await this.eventRepository.save(event);
@@ -57,26 +67,67 @@ export class EventsService {
   async findAllPublic(
     userId?: string,
     page = 1,
-    limit = 10
-  ): Promise<{ data: EventResponseDto[]; total: number }> {
-    const [events, total] = await this.eventRepository.findAndCount({
-      where: { visibility: 'public' },
-      relations: ['organizer', 'participants', 'participants.user'],
-      order: { dateTime: 'ASC' },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+    limit = 10,
+    tagIds?: string[],
+    sortBy: 'date' | 'title' | 'participants' = 'date',
+    sortOrder: 'ASC' | 'DESC' = 'ASC'
+  ): Promise<PaginatedResponse<EventResponseDto>> {
+
+    const queryBuilder = this.eventRepository
+      .createQueryBuilder('event')
+      .leftJoinAndSelect('event.organizer', 'organizer')
+      .leftJoinAndSelect('event.participants', 'participants')
+      .leftJoinAndSelect('participants.user', 'participantUser')
+      .leftJoinAndSelect('event.tags', 'tags')
+      .where('event.visibility = :visibility', { visibility: 'public' })
+      .loadRelationCountAndMap('event.participantsCount', 'event.participants');
+
+    if (tagIds?.length) {
+      queryBuilder
+        .innerJoin('event.tags', 'filteredTags')
+        .andWhere('filteredTags.id IN (:...tagIds)', { tagIds })
+        .groupBy('event.id')
+        .addGroupBy('organizer.id')
+        .addGroupBy('participants.id')
+        .addGroupBy('participantUser.id')
+        .addGroupBy('tags.id')
+        .having('COUNT(DISTINCT filteredTags.id) = :tagCount', { tagCount: tagIds.length });
+    }
+
+    switch (sortBy) {
+      case 'title':
+        queryBuilder.orderBy('event.title', sortOrder);
+        break;
+      case 'participants':
+        queryBuilder.orderBy('participantsCount', sortOrder);
+        break;
+      case 'date':
+      default:
+        queryBuilder.orderBy('event.dateTime', sortOrder);
+    }
+
+    const validatedPage = Math.max(1, page);
+    const validatedLimit = Math.min(100, Math.max(1, limit));
+
+    queryBuilder
+      .skip((validatedPage - 1) * validatedLimit)
+      .take(validatedLimit);
+
+    const [events, total] = await queryBuilder.getManyAndCount();
 
     return {
       data: events.map(event => this._toResponseDto(event, userId)),
       total,
+      page: validatedPage,
+      limit: validatedLimit,
+      totalPages: Math.ceil(total / validatedLimit)
     };
   }
 
   async findOne(id: string, userId?: string): Promise<EventResponseDto> {
     const event = await this.eventRepository.findOne({
       where: { id },
-      relations: ['organizer', 'participants', 'participants.user'],
+      relations: ['organizer', 'participants', 'participants.user', 'tags'],
     });
 
     if (!event) throw new EventNotFoundException();
@@ -84,7 +135,10 @@ export class EventsService {
   }
 
   async update(id: string, dto: UpdateEventDto, userId: string): Promise<EventResponseDto> {
-    const event = await this.eventRepository.findOne({ where: { id } });
+    const event = await this.eventRepository.findOne({
+      where: { id },
+      relations: ['tags']
+    });
     if (!event) throw new EventNotFoundException();
     if (event.organizerId !== userId) throw new NotOrganizerException();
 
@@ -96,6 +150,11 @@ export class EventsService {
     if (dto.capacity !== undefined) {
       this._validateCapacity(dto.capacity);
       event.capacity = dto.capacity;
+    }
+
+    if (dto.tags !== undefined) {
+      if (dto.tags.length > 0) event.tags = await this.tagsService.findOrCreate(dto.tags);
+      else event.tags = [];
     }
 
     Object.assign(event, dto);
@@ -180,6 +239,7 @@ export class EventsService {
       .leftJoinAndSelect('event.organizer', 'organizer')
       .leftJoinAndSelect('event.participants', 'participants')
       .leftJoinAndSelect('participants.user', 'participantUser')
+      .leftJoinAndSelect('event.tags', 'tags')
       .where('event.organizerId = :userId', { userId })
       .orWhere('participants.userId = :userId', { userId })
       .orderBy('event.dateTime', 'ASC')
@@ -194,6 +254,7 @@ export class EventsService {
       .leftJoinAndSelect('event.organizer', 'organizer')
       .leftJoinAndSelect('event.participants', 'participants')
       .leftJoinAndSelect('participants.user', 'participantUser')
+      .leftJoinAndSelect('event.tags', 'tags')
       .where('participants.userId = :userId', { userId })
       .orderBy('event.dateTime', 'ASC')
       .getMany();
@@ -242,6 +303,10 @@ export class EventsService {
       userJoined: userId ? event.participants?.some(p => p.userId === userId) : false,
       canEdit: userId ? event.organizerId === userId : false,
       createdAt: event.createdAt,
+      tags: event.tags?.map(tag => ({
+        id: tag.id,
+        name: tag.name,
+      })) || [],
     };
   }
 }

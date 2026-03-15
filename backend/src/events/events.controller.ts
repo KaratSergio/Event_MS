@@ -4,12 +4,13 @@ import {
 } from '@nestjs/common';
 import {
   ApiTags, ApiBearerAuth,
-  ApiOperation, ApiResponse
+  ApiOperation, ApiResponse, ApiQuery
 } from '@nestjs/swagger';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { EventResponseDto } from './dto/event-response.dto';
+import { PaginatedResponse } from './dto/paginated-response.dto';
 import {
   ParticipantResponseDto,
   ParticipantsCountDto,
@@ -26,14 +27,21 @@ export class EventsController {
 
   @Get()
   @ApiOperation({ summary: 'Get all public events' })
-  @ApiResponse({ status: HttpStatus.OK, type: [EventResponseDto] })
+  @ApiResponse({ status: HttpStatus.OK, type: PaginatedResponse<EventResponseDto> })
   async findAll(
     @Request() req,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
-  ) {
+    @Query('tags') tags?: string | string[],
+    @Query('sortBy') sortBy: 'date' | 'title' | 'participants' = 'date',
+    @Query('sortOrder') sortOrder: 'ASC' | 'DESC' = 'ASC',
+  ): Promise<PaginatedResponse<EventResponseDto>> {
     const userId = req.user?.id;
-    return this.eventsService.findAllPublic(userId, page, limit);
+    const tagIds = tags ? (Array.isArray(tags) ? tags : [tags]) : undefined;
+
+    return this.eventsService.findAllPublic(
+      userId, page, limit, tagIds, sortBy, sortOrder
+    );
   }
 
   @Get(':id')

@@ -1,9 +1,10 @@
 import {
   Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany,
-  CreateDateColumn, JoinColumn
+  CreateDateColumn, JoinColumn, ManyToMany, JoinTable
 } from 'typeorm';
 import { User } from './user.entity';
 import { Participant } from './participant.entity';
+import { Tag } from './tag.entity';
 
 @Entity('events')
 export class Event {
@@ -40,4 +41,14 @@ export class Event {
 
   @OneToMany(() => Participant, participant => participant.event, { cascade: true })
   participants: Participant[];
+
+  @ManyToMany(() => Tag, (tag) => tag.events, {
+    cascade: true,
+  })
+  @JoinTable({
+    name: 'event_tags',
+    joinColumn: { name: 'event_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'tag_id', referencedColumnName: 'id' },
+  })
+  tags: Tag[];
 }

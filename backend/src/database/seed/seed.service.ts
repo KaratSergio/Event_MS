@@ -5,6 +5,7 @@ import * as argon2 from 'argon2';
 import { User } from '../entities/user.entity';
 import { Event } from '../entities/event.entity';
 import { Participant } from '../entities/participant.entity';
+import { Tag } from '../entities/tag.entity';
 
 @Injectable()
 export class SeedService implements OnModuleInit {
@@ -17,6 +18,8 @@ export class SeedService implements OnModuleInit {
     private eventRepository: Repository<Event>,
     @InjectRepository(Participant)
     private participantRepository: Repository<Participant>,
+    @InjectRepository(Tag)
+    private tagRepository: Repository<Tag>,
   ) { }
 
   async onModuleInit() {
@@ -53,7 +56,23 @@ export class SeedService implements OnModuleInit {
       await this.userRepository.save([user1, user2]);
       this.logger.log('✓ 2 users created');
 
-      // 2. EVENTS
+      // 2. TAGS
+      const tagNames = [
+        'tech', 'music', 'art', 'business',
+        'sports', 'food', 'workshop',
+        'conference', 'networking'
+      ];
+
+      const tags: Tag[] = [];
+      for (const name of tagNames) {
+        const tag = this.tagRepository.create({ name });
+        tags.push(tag);
+      }
+
+      await this.tagRepository.save(tags);
+      this.logger.log(`✓ ${tags.length} tags created`);
+
+      // 3. EVENTS
       const now = new Date();
 
       // Event 1: tomorrow
@@ -68,6 +87,12 @@ export class SeedService implements OnModuleInit {
       const nextMonth = new Date(now);
       nextMonth.setMonth(nextMonth.getMonth() + 1);
 
+      // Event 4: this weekend
+      const thisWeekend = new Date(now);
+      const dayOfWeek = now.getDay(); // 0 = Sunday, 6 = Saturday
+      const daysUntilSaturday = dayOfWeek === 6 ? 0 : 6 - dayOfWeek;
+      thisWeekend.setDate(now.getDate() + daysUntilSaturday);
+
       const event1 = this.eventRepository.create({
         title: 'Tech Conference 2024',
         description: 'Annual technology conference with industry experts',
@@ -76,6 +101,7 @@ export class SeedService implements OnModuleInit {
         capacity: 100,
         visibility: 'public',
         organizerId: user1.id,
+        tags: tags.filter(t => ['tech', 'conference'].includes(t.name))
       });
 
       const event2 = this.eventRepository.create({
@@ -86,6 +112,7 @@ export class SeedService implements OnModuleInit {
         capacity: 50,
         visibility: 'public',
         organizerId: user1.id,
+        tags: tags.filter(t => ['tech', 'workshop'].includes(t.name))
       });
 
       const event3 = this.eventRepository.create({
@@ -93,15 +120,37 @@ export class SeedService implements OnModuleInit {
         description: 'Casual networking event for tech professionals',
         dateTime: nextWeek,
         location: 'Downtown Cafe',
-        // capacity: undefined , // unlimited
         visibility: 'public',
         organizerId: user2.id,
+        tags: tags.filter(t => ['business', 'networking'].includes(t.name))
       });
 
-      await this.eventRepository.save([event1, event2, event3]);
-      this.logger.log('✓ 3 events created');
+      const event4 = this.eventRepository.create({
+        title: 'Jazz Night',
+        description: 'Evening of live jazz music',
+        dateTime: thisWeekend,
+        location: 'Blue Note Jazz Club',
+        capacity: 80,
+        visibility: 'public',
+        organizerId: user2.id,
+        tags: tags.filter(t => ['music', 'art'].includes(t.name))
+      });
 
-      // 3. PARTICIPANTS
+      const event5 = this.eventRepository.create({
+        title: 'Food Festival',
+        description: 'Taste cuisines from around the world',
+        dateTime: nextMonth,
+        location: 'City Park',
+        capacity: 200,
+        visibility: 'public',
+        organizerId: user1.id,
+        tags: tags.filter(t => ['food', 'art'].includes(t.name))
+      });
+
+      await this.eventRepository.save([event1, event2, event3, event4, event5]);
+      this.logger.log('✓ 5 events created with tags');
+
+      // 4. PARTICIPANTS
       const participant1 = this.participantRepository.create({
         userId: user2.id,
         eventId: event1.id,
@@ -117,10 +166,26 @@ export class SeedService implements OnModuleInit {
         eventId: event2.id,
       });
 
-      await this.participantRepository.save([participant1, participant2, participant3]);
+      const participant4 = this.participantRepository.create({
+        userId: user1.id,
+        eventId: event4.id,
+      });
+
+      await this.participantRepository.save([participant1, participant2, participant3, participant4]);
       this.logger.log('✓ Participants added');
 
+      // 5. RESULT, statistic
       this.logger.log('✓ Seeding completed!');
+      this.logger.log('\n=== TEST DATA SUMMARY ===');
+      this.logger.log(`Users: 2 (bob@g.com, jane@g.com)`);
+      this.logger.log(`Tags: ${tags.length} created`);
+      this.logger.log(`Events: 5 created with tags:`);
+      this.logger.log(`  - Tech Conference: tech, conference`);
+      this.logger.log(`  - Web Dev Workshop: tech, workshop`);
+      this.logger.log(`  - Networking Meetup: business, networking`);
+      this.logger.log(`  - Jazz Night: music, art`);
+      this.logger.log(`  - Food Festival: food, art`);
+      this.logger.log(`Participants: 4 participations`);
       this.logger.log('\nTest credentials:');
       this.logger.log('bob@g.com / 123456');
       this.logger.log('jane@g.com / 123456');

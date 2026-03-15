@@ -71,3 +71,21 @@ export class UnauthorizedException extends HttpException {
     super(message, HttpStatus.UNAUTHORIZED);
   }
 }
+
+export class TagNotFoundException extends HttpException {
+  constructor(id?: string) {
+    super(id ? `Tag with ID ${id} not found` : 'Tag not found', HttpStatus.NOT_FOUND);
+  }
+}
+
+export class TagAlreadyExistsException extends HttpException {
+  constructor(name: string) {
+    super(`Tag with name "${name}" already exists`, HttpStatus.CONFLICT);
+  }
+}
+
+export class TagNameRequiredException extends HttpException {
+  constructor() {
+    super('Tag name is required', HttpStatus.BAD_REQUEST);
+  }
+}
