@@ -28,7 +28,7 @@ export default function LoadingState({
     : 'flex items-center justify-center p-4 sm:p-6';
 
   return (
-    <div className={`${containerClasses} ${className}`}>
+    <div className={`${containerClasses} ${className} bg-inherit`}>
       <div className="text-center">
         <div className={`inline-block ${spinnerSizes[size]} animate-spin rounded-full border-4 border-solid border-green-600 border-r-transparent`}></div>
         <p className={`mt-2 sm:mt-3 ${textSizes[size]} text-gray-600`}>{message}</p>
