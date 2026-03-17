@@ -36,6 +36,10 @@ export const API_ENDPOINTS = {
     CREATE: '/tags',
     DELETE: (id: string) => `/tags/${id}`,
   },
+
+  ASSISTANT: {
+    ASK: '/assistant/ask',
+  },
 } as const;
 
 export type ApiEndpoints = typeof API_ENDPOINTS;

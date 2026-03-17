@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../services/hooks/useAuth';
+import BackButton from '../components/ui/BackButton';
 import {
   EnvelopeIcon, LockClosedIcon,
   ArrowRightIcon, EyeIcon, EyeSlashIcon,
-  ArrowLeftIcon
 } from '@heroicons/react/24/outline';
 
 export default function Login() {
@@ -34,20 +34,10 @@ export default function Login() {
     setShowPassword(!showPassword);
   };
 
-  const handleBackToEvents = () => {
-    navigate('/events');
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-indigo-100 py-8 px-4 sm:px-6">
       <div className="max-w-md w-full">
-        <button
-          onClick={handleBackToEvents}
-          className="group mb-4 inline-flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors"
-        >
-          <ArrowLeftIcon className="w-4 h-4 mr-1 group-hover:-translate-x-1 transition-transform" />
-          Back to Events
-        </button>
+        <BackButton to="/events" label="Back to Events" />
 
         {/* Logo/Brand */}
         <div className="text-center mb-8">

@@ -8,13 +8,9 @@ import { startOfWeek } from 'date-fns/startOfWeek';
 import { getDay } from 'date-fns/getDay';
 import { enUS } from 'date-fns/locale/en-US';
 import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  ListBulletIcon,
-  Squares2X2Icon,
-  ClockIcon,
-  MapPinIcon,
-  UserGroupIcon
+  ChevronLeftIcon, ChevronRightIcon,
+  ListBulletIcon, Squares2X2Icon,
+  ClockIcon, MapPinIcon, UserGroupIcon
 } from '@heroicons/react/24/outline';
 import { useEvents } from '../services/hooks/useEvents';
 import { useAuth } from '../services/hooks/useAuth';

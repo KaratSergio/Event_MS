@@ -2,11 +2,6 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEvents } from '../services/hooks/useEvents';
 import { useAuth } from '../services/hooks/useAuth';
-import {
-  CalendarIcon, MapPinIcon, UserGroupIcon,
-  PencilIcon, TrashIcon,
-  ChevronLeftIcon, ChevronRightIcon
-} from '@heroicons/react/24/outline';
 import Modal from '../components/ui/Modal';
 import EventForm from '../components/EventForm';
 import DeleteConfirmation from '../components/DeleteConfirmation';
@@ -16,6 +11,11 @@ import LoadingState from '../components/ui/LoadingState';
 import { formatEventDetails } from '../utils/formatDate';
 import TagChip from '../components/tag/TagChip';
 import type { UpdateEventDto } from '../services/events/events.types';
+import BackButton from '../components/ui/BackButton';
+import {
+  CalendarIcon, MapPinIcon, UserGroupIcon,
+  PencilIcon, TrashIcon, ChevronRightIcon
+} from '@heroicons/react/24/outline';
 
 export default function EventDetails() {
   const { id } = useParams<{ id: string }>();
@@ -82,13 +82,7 @@ export default function EventDetails() {
     <div className="py-3 sm:py-6">
       <div className="max-w-3xl mx-auto px-3 sm:px-4">
         {/* Back button */}
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center text-gray-600 hover:text-green-600 mb-3 sm:mb-4 transition-colors group text-sm"
-        >
-          <ChevronLeftIcon className="w-4 h-4 mr-1 group-hover:-translate-x-1 transition-transform" />
-          <span className="text-sm">Back to Events</span>
-        </button>
+        <BackButton to="/events" label="Back to Events" />
 
         {/* Event Card */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-visible mb-4">
