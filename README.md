@@ -33,6 +33,7 @@ The project is built on React + NestJS + PostgreSQL stack.
 - React Big Calendar
 - Axios
 - Heroicons
+- **Storybook** (UI component development and documentation)
 
 ### Backend
 - NestJS
@@ -80,6 +81,17 @@ The project is built on React + NestJS + PostgreSQL stack.
   - Swagger: http://localhost:5000/api/docs
   - PgAdmin: http://localhost:5050
 
+  ## 📚 Storybook
+
+UI components are isolated in the Storybook development environment.
+
+1. **Run Storybook**
+   ```bash
+    cd frontend
+    npx storybook@latest init
+    npm run storybook
+
+Storybook will be available at: http://localhost:6006
 
 [⬆️ Back to Top](#)
 ---
