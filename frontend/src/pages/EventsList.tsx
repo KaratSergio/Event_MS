@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useEvents } from '../services/hooks/useEvents';
-import { useAuth } from '../services/hooks/useAuth';
+import { useAuthStore } from '../services/store/authStore';
 import type { Event } from '../services/events/events.types';
 import type { Tag } from '../services/tags/tags.types';
 import {
@@ -18,7 +18,7 @@ import TagSelect from '../components/tag/TagSelect';
 
 export default function EventsList() {
   const { events, isLoading, error, fetchPublicEvents, joinEvent, leaveEvent } = useEvents();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
 
   const [searchTerm, setSearchTerm] = useState('');

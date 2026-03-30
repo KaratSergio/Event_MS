@@ -1,7 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
-import Login from './pages/Login';
-import Register from './pages/Register';
+import AuthPage from './pages/AuthPage';
 import PrivateRoute from './components/PrivateRoute';
 import Layout from './components/Layout';
 import Assistant from './components/assistant/Assistant';
@@ -18,8 +17,7 @@ export function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route path="/auth/:mode" element={<AuthPage />} />
 
         <Route path="/" element={<Layout />}>
           <Route index element={<Navigate to="/events" replace />} />

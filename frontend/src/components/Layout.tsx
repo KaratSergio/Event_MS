@@ -125,7 +125,7 @@ export default function Layout() {
                 </>
               ) : (
                 <Link
-                  to="/login"
+                  to="/auth/login"
                   className={`flex items-center px-3 py-2 text-sm font-medium cursor-pointer rounded-lg transition-colors ${isActive('/login')
                     ? 'bg-green-100 text-green-700'
                     : 'text-green-600 hover:bg-green-50'

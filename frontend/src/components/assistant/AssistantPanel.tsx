@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { XMarkIcon, ChatBubbleOvalLeftEllipsisIcon } from '@heroicons/react/24/outline';
 import { useAssistant } from '../../services/hooks/useAssistant';
-import { useAuth } from '../../services/hooks/useAuth';
+import { useAuthStore } from '../../services/store/authStore';
 import AssistantMessage from './AssistantMessage';
 import { SUGGESTED_QUESTIONS } from '../../services/assistant/assistant.types';
 import LoadingState from '../ui/LoadingState';
@@ -13,15 +13,10 @@ interface AssistantPanelProps {
 
 export default function AssistantPanel({ onClose }: AssistantPanelProps) {
   const { messages, isLoading, sendMessage } = useAssistant();
-  const { user } = useAuth();
+  const { user } = useAuthStore(); // изменено
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
-
-  // useEffect(() => {
-  //   document.body.classList.add('overflow-hidden');
-  //   return () => document.body.classList.remove('overflow-hidden');
-  // }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
